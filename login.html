@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Login — Amrita Smart Campus</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#050810;--panel:#080d1a;--border:#1a2540;--accent:#00e5ff;
+  --danger:#ff2d55;--warn:#ffb800;--green:#00ff88;--purple:#a855f7;
+  --yellow:#ffd700;--text:#c8d8f0;--dim:#4a5a78;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overflow:hidden;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:998;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.06) 2px,rgba(0,0,0,0.06) 4px);}
+
+/* Background styling to match the theme */
+#map-bg { position:absolute; inset:0; z-index:0; background: url('assets/campus_bg.jpg') center/cover no-repeat; opacity: 0.3; filter: blur(4px); }
+
+/* LOGIN OVERLAY v2 */
+#login-overlay { position:fixed; inset:0; z-index:1000; display:flex; align-items:center; justify-content:center; background:rgba(5,8,16,0.9); backdrop-filter:blur(15px); transition:opacity 0.6s ease, transform 0.6s ease; }
+.login-panel { background:rgba(10,16,32,0.85); border:1px solid rgba(0,229,255,0.3); padding:35px; border-radius:16px; box-shadow:0 0 60px rgba(0,229,255,0.15), inset 0 0 20px rgba(0,229,255,0.05); width:380px; text-align:center; position:relative; overflow:hidden; }
+.login-orb { position:absolute; top:-50px; right:-50px; width:150px; height:150px; background:radial-gradient(circle, var(--accent) 0%, transparent 70%); opacity:0.15; filter:blur(20px); pointer-events:none;}
+.login-orb-2 { position:absolute; bottom:-50px; left:-50px; width:150px; height:150px; background:radial-gradient(circle, var(--purple) 0%, transparent 70%); opacity:0.15; filter:blur(20px); pointer-events:none;}
+.login-panel::before { content:''; position:absolute; top:0; left:0; width:100%; height:4px; background:linear-gradient(90deg, transparent, var(--accent), var(--purple), transparent); }
+.login-title { font-family:'Orbitron',sans-serif; font-size:22px; font-weight:900; color:#fff; margin-bottom:8px; letter-spacing:3px; text-shadow:0 0 10px rgba(0,229,255,0.4); }
+.login-desc { font-family:'Inter',sans-serif; font-size:12px; color:var(--text); margin-bottom:28px; line-height:1.6; opacity:0.8; }
+.login-input { box-sizing:border-box; width:100%; padding:14px 16px; margin-bottom:15px; background:rgba(0,0,0,0.3); border:1px solid var(--border); color:#fff; font-family:'Inter',sans-serif; font-size:13px; border-radius:6px; outline:none; transition:all 0.3s; }
+.login-input:focus { border-color:var(--accent); box-shadow:0 0 15px rgba(0,229,255,0.2); }
+.btn-primary { display:block; width:100%; padding:14px; margin-bottom:12px; background:linear-gradient(45deg, rgba(0,229,255,0.15), rgba(168,85,247,0.15)); border:1px solid rgba(0,229,255,0.4); color:#fff; font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; cursor:pointer; border-radius:6px; transition:all 0.3s ease; letter-spacing:1px; position:relative; overflow:hidden; }
+.btn-primary:active { transform:scale(0.98); }
+.btn-primary::before { content:''; position:absolute; top:0; left:-100%; width:100%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent); transition:all 0.4s; }
+.btn-primary:hover::before { left:100%; }
+.btn-primary:hover { border-color:var(--accent); box-shadow:0 0 20px rgba(0,229,255,0.3); }
+.btn-glass { display:block; width:100%; padding:12px; margin-bottom:10px; background:transparent; border:1px solid var(--border); color:var(--dim); font-family:'Share Tech Mono',monospace; font-size:13px; cursor:pointer; border-radius:6px; transition:all 0.3s ease; }
+.btn-glass:hover { color:#fff; border-color:var(--dim); background:rgba(255,255,255,0.05); }
+.login-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.btn-purpose { padding:12px 8px; background:var(--panel); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'Share Tech Mono',monospace; font-size:11px; cursor:pointer; transition:all 0.2s; }
+.btn-purpose:hover { background:rgba(0,229,255,0.1); border-color:var(--accent); color:var(--accent); box-shadow:0 0 12px rgba(0,229,255,0.2); }
+.btn-purpose.full-w { grid-column:1 / -1; }
+.login-step { display:none; }
+.login-step.active { display:block; animation:fadeInUp 0.4s ease forwards; }
+@keyframes fadeInUp { from{opacity:0; transform:translateY(15px);} to{opacity:1; transform:translateY(0);} }
+</style>
+</head>
+<body>
+
+<div id="map-bg"></div>
+<div id="login-overlay">
+  <div class="login-panel">
+    <div class="login-orb"></div>
+    <div class="login-orb-2"></div>
+
+    <!-- INITIAL STEP -->
+    <div id="login-step-init" class="login-step active">
+      <div class="login-title">SYS_AUTH REQUIRED</div>
+      <div class="login-desc">Select your user profile to initialize the routing subsystem.</div>
+      <button class="btn-primary" onclick="isFirstTimeUser=true; goToStep('register')">FIRST-TIME VISITOR</button>
+      <button class="btn-glass" onclick="isFirstTimeUser=false; goToStep('login')">REGULAR USER LOGIN</button>
+      <button class="btn-glass" style="border-color:var(--warn); color:var(--warn);" onclick="goToStep('help')">? GET HELP</button>
+    </div>
+
+    <!-- LOGIN STEP -->
+    <div id="login-step-login" class="login-step">
+      <div class="login-title">USER LOGIN</div>
+      <div class="login-desc">Enter your campus credentials.</div>
+      <input class="login-input" type="text" placeholder="Roll Number / Employee ID" id="auth-id">
+      <input class="login-input" type="password" placeholder="Passcode" id="auth-pass">
+      <button class="btn-primary" onclick="submitLogin()">AUTHORIZE ACCESS</button>
+      <button class="btn-glass" onclick="goToStep('init')">← BACK</button>
+    </div>
+
+    <!-- REGISTRATION STEP -->
+    <div id="login-step-register" class="login-step">
+      <div class="login-title">VISITOR RECORD</div>
+      <div class="login-desc">Please issue your temporary credentials.</div>
+      <input class="login-input" type="text" placeholder="Full Name" id="reg-name">
+      <input class="login-input" type="text" placeholder="Contact Number" id="reg-phone">
+      <button class="btn-primary" onclick="submitRegistration()">NEXT STEP →</button>
+      <button class="btn-glass" onclick="goToStep('init')">← BACK</button>
+    </div>
+
+    <!-- PURPOSE STEP -->
+    <div id="login-step-purpose" class="login-step">
+      <div class="login-title">VISIT PURPOSE</div>
+      <div class="login-desc">Select destination for auto-nav sequence.</div>
+      <div class="login-grid">
+        <button class="btn-purpose" onclick="startGuidedTour('ADMIN', 'ADMISSION')">ADMISSION</button>
+        <button class="btn-purpose" style="border-color:var(--purple); color:var(--purple);" onclick="goToStep('exam')">ENTRANCE EXAM</button>
+        <button class="btn-purpose" onclick="goToStep('hostel_g')">GIRLS HOSTEL</button>
+        <button class="btn-purpose" onclick="goToStep('hostel_b')">BOYS HOSTEL</button>
+        <button class="btn-purpose" onclick="startGuidedTour('CANT_M', 'CANTEEN')">MAIN CANTEEN</button>
+        <button class="btn-purpose full-w" onclick="startGuidedTour('CLIN', 'MEDICAL')">MEDICAL EMERGENCY</button>
+      </div>
+      <button class="btn-glass" style="margin-top:10px;" onclick="goToStep('register')">← BACK</button>
+    </div>
+
+    <!-- ENTRANCE EXAM STEP -->
+    <div id="login-step-exam" class="login-step">
+      <div class="login-title" style="color:var(--purple); text-shadow:0 0 10px rgba(168,85,247,0.4);">EXAM ASSIGNMENT</div>
+      <div class="login-desc">Which academic block is assigned to you on your hall ticket?</div>
+      <div class="login-grid">
+        <button class="btn-purpose" onclick="startGuidedTour('AB1', 'EXAM')">ACADEMIC BLK 1</button>
+        <button class="btn-purpose" onclick="startGuidedTour('AB2', 'EXAM')">ACADEMIC BLK 2</button>
+        <button class="btn-purpose full-w" onclick="startGuidedTour('AB3', 'EXAM')">ACADEMIC BLK 3</button>
+      </div>
+      <button class="btn-glass" style="margin-top:10px;" onclick="goToStep('purpose')">← BACK</button>
+    </div>
+
+    <!-- GIRLS HOSTEL STEP -->
+    <div id="login-step-hostel_g" class="login-step">
+      <div class="login-title" style="color:var(--purple); text-shadow:0 0 10px rgba(168,85,247,0.4);">GIRLS HOSTELS</div>
+      <div class="login-desc">Select your assigned Bhavanam.</div>
+      <div class="login-grid">
+        <button class="btn-purpose full-w" onclick="startGuidedTour('MYTH', 'HOSTEL')">MYTHREYI BHAVANAM</button>
+        <button class="btn-purpose" onclick="startGuidedTour('GARGI', 'HOSTEL')">GARGI</button>
+        <button class="btn-purpose" onclick="startGuidedTour('ADITHI', 'HOSTEL')">ADITHI</button>
+      </div>
+      <button class="btn-glass" style="margin-top:10px;" onclick="goToStep('purpose')">← BACK</button>
+    </div>
+
+    <!-- BOYS HOSTEL STEP -->
+    <div id="login-step-hostel_b" class="login-step">
+      <div class="login-title" style="color:var(--green); text-shadow:0 0 10px rgba(0,255,136,0.4);">BOYS HOSTELS</div>
+      <div class="login-desc">Select your assigned Bhavanam.</div>
+      <div class="login-grid">
+        <button class="btn-purpose" onclick="startGuidedTour('VASISH', 'HOSTEL')">VASISHTA</button>
+        <button class="btn-purpose" onclick="startGuidedTour('AGAS', 'HOSTEL')">AGASTHYA</button>
+        <button class="btn-purpose" onclick="startGuidedTour('NACH', 'HOSTEL')">NACHIKETAS</button>
+        <button class="btn-purpose" onclick="startGuidedTour('VYASA', 'HOSTEL')">VYASA</button>
+      </div>
+      <button class="btn-glass" style="margin-top:10px;" onclick="goToStep('purpose')">← BACK</button>
+    </div>
+
+    <!-- HELP STEP -->
+    <div id="login-step-help" class="login-step">
+      <div class="login-title" style="color:var(--warn); text-shadow:0 0 10px rgba(255,184,0,0.4);">SUPPORT DESK</div>
+      <div class="login-desc">Please feel free to ask for help! We are here to guide you. What kind of assistance do you need?</div>
+      <div class="login-grid">
+        <button class="btn-purpose" onclick="startGuidedTour('ADMIN')">ADMIN OFFICE</button>
+        <button class="btn-purpose" onclick="startGuidedTour('GATE')">MAIN SECURITY</button>
+      </div>
+      <button class="btn-primary" style="margin-top:15px; background:linear-gradient(45deg, rgba(255,184,0,0.15), rgba(255,45,85,0.15)); border-color:var(--warn); color:var(--warn);" onclick="contactSupport()">📞 LIVE ASSISTANCE</button>
+      <button class="btn-glass" onclick="goToStep('init')">← BACK TO HOME</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let isFirstTimeUser = false;
+
+function goToStep(stepId){
+  document.querySelectorAll('.login-step').forEach(el => el.classList.remove('active'));
+  document.getElementById('login-step-' + stepId).classList.add('active');
+}
+
+function contactSupport(){
+  alert('📞 Connecting to Campus Helpdesk... A guide will assist you shortly.');
+}
+
+function submitLogin(){
+  const uid = document.getElementById('auth-id').value;
+  const pass = document.getElementById('auth-pass').value;
+  if(!uid || !pass) { alert('Please enter credentials'); return; }
+  // Redirect to main app without specific destination
+  window.location.href = "amrita smart campus emergency response visualizer.html";
+}
+
+function submitRegistration(){
+  const name = document.getElementById('reg-name').value;
+  const phone = document.getElementById('reg-phone').value;
+  if(!name || !phone) { alert('Please fill your contact details'); return; }
+  goToStep('purpose');
+}
+
+function startGuidedTour(destId, purpose = ''){
+  // Redirect to main app with parameters
+  let url = "amrita smart campus emergency response visualizer.html?dest=" + encodeURIComponent(destId);
+  if (purpose) {
+    url += "&purpose=" + encodeURIComponent(purpose);
+  }
+  if (isFirstTimeUser) {
+    url += "&firstTime=true";
+  }
+  window.location.href = url;
+}
+</script>
+</body>
+</html>
